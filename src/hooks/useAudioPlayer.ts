@@ -58,13 +58,16 @@ export function useAudioPlayer(jukebox: Jukebox) {
   hasJoinedRef.current = hasJoined;
   const advanceLockRef = useRef<string | null>(null);
   /**
-   * Timestamp until which drift correction stands down.
+   * A seek we've applied locally that the shared clock hasn't caught up to yet.
    *
-   * A shared seek takes a round trip to land. Without this, the sync loop sees
-   * "you're 3 minutes ahead of the shared clock" in that window and drags the
-   * playhead straight back — so seeking would appear to do nothing.
+   * A shared seek costs a round trip. Until it lands, the sync loop would see
+   * "you're three minutes ahead of everyone" and drag the playhead back,
+   * silently undoing the user's seek. Waiting for the shared position to
+   * actually reach the target — rather than guessing a fixed timeout — keeps
+   * that correct on a slow connection too. The deadline is only a safety valve
+   * so a dropped request can't wedge sync off forever.
    */
-  const seekGuardUntilRef = useRef(0);
+  const pendingSeekRef = useRef<{ target: number; deadline: number } | null>(null);
 
   const currentSong = currentEntry?.song ?? null;
   const songUrl = currentSong ? resolveAssetUrl(currentSong.audio_url) : '';
@@ -220,7 +223,14 @@ export function useAudioPlayer(jukebox: Jukebox) {
       const el = audioRef.current;
       const expected = expectedPosition();
 
-      const guarded = Date.now() < seekGuardUntilRef.current;
+      // Has our own seek shown up in the shared state yet?
+      const pending = pendingSeekRef.current;
+      if (pending) {
+        if (Math.abs(expected - pending.target) < 2 || Date.now() > pending.deadline) {
+          pendingSeekRef.current = null;
+        }
+      }
+      const guarded = pendingSeekRef.current !== null;
 
       // Progress readout: listeners read their own element, onlookers follow
       // the shared clock, so the bar moves for everyone.
@@ -269,9 +279,11 @@ export function useAudioPlayer(jukebox: Jukebox) {
     return () => clearInterval(id);
   }, [expectedPosition, playback.is_playing, playback.current_queue_id, effectiveDuration, advance]);
 
-  // Reset the one-shot advance latch whenever the track actually changes.
+  // A track change invalidates both the advance latch and any seek we were
+  // still waiting to see reflected.
   useEffect(() => {
     advanceLockRef.current = null;
+    pendingSeekRef.current = null;
   }, [playback.current_queue_id]);
 
   // --- Gestures ------------------------------------------------------------
@@ -312,6 +324,11 @@ export function useAudioPlayer(jukebox: Jukebox) {
   }, []);
 
   const updateScrub = useCallback((value: number) => {
+    // Entering scrub mode on the value change itself — not only on
+    // pointerdown/keydown — means any input method works. Without this, a
+    // programmatic or assistive-tech change is overwritten by the next sync
+    // tick before it can be committed, and the seek silently does nothing.
+    setScrubbing(true);
     setScrubValue(value);
     setDisplayTime(value);
   }, []);
@@ -320,7 +337,7 @@ export function useAudioPlayer(jukebox: Jukebox) {
     async (value: number) => {
       setScrubbing(false);
       // Hold the sync loop off until the shared clock reflects this seek.
-      seekGuardUntilRef.current = Date.now() + 2500;
+      pendingSeekRef.current = { target: value, deadline: Date.now() + 10_000 };
       const el = audioRef.current;
       if (el && el.readyState > 0) {
         try {

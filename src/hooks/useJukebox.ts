@@ -50,7 +50,19 @@ export function useJukebox(onError: (message: string) => void) {
    */
   const clockOffsetRef = useRef(0);
 
+  /**
+   * Server timestamp of the newest snapshot we've applied.
+   *
+   * Snapshots arrive from several places at once — the initial read, realtime
+   * refreshes, and the return value of every mutation — so on a slow or flaky
+   * connection they can resolve out of order. Applying an older one would make
+   * the queue visibly jump backwards, so stale snapshots are dropped.
+   */
+  const latestServerTimeRef = useRef(0);
+
   const applyState = useCallback((next: JukeboxState) => {
+    if (next.serverTime < latestServerTimeRef.current) return;
+    latestServerTimeRef.current = next.serverTime;
     clockOffsetRef.current = next.serverTime - Date.now();
     setState(next);
     setLoadingQueue(false);

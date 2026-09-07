@@ -15,7 +15,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 /** Dismiss the autoplay gate and wait for the audio element to be wired up. */
 async function enterSaloon(page: Page) {
-  await page.goto('/');
+  await page.goto('./');
   const join = page.getByRole('button', { name: /play jukebox/i });
   await expect(join).toBeVisible();
   await join.click();
@@ -24,7 +24,7 @@ async function enterSaloon(page: Page) {
 
 /** Dismiss the entry overlay WITHOUT enabling audio (the browsing path). */
 async function browseOnly(page: Page) {
-  await page.goto('/');
+  await page.goto('./');
   await page.getByRole('button', { name: /just browsing/i }).click();
   await expect(page.getByRole('dialog')).toBeHidden();
 }
@@ -80,15 +80,22 @@ async function rpc(fn: string, body: unknown = {}) {
 
 async function resetSharedQueue() {
   if (!usingSupabase) return;
-  let state = await rpc('jukebox_state');
-  for (const entry of state.queue.filter((e: any) => e.status === 'queued')) {
-    state = await rpc('jukebox_remove_from_queue', { p_queue_id: entry.id });
-  }
-  // Drain whatever is playing; with nothing queued this lands on silence.
-  for (let i = 0; i < 5 && state.playback.current_queue_id; i++) {
-    state = await rpc('jukebox_advance', {
-      p_expected_current_id: state.playback.current_queue_id,
-    });
+  // A page from the previous test can still be closing and may push one last
+  // change, so confirm the queue is really empty instead of assuming it.
+  for (let attempt = 0; attempt < 4; attempt++) {
+    let state = await rpc('jukebox_state');
+    for (const entry of state.queue.filter((e: any) => e.status === 'queued')) {
+      state = await rpc('jukebox_remove_from_queue', { p_queue_id: entry.id });
+    }
+    // Drain whatever is playing; with nothing queued this lands on silence.
+    for (let i = 0; i < 6 && state.playback.current_queue_id; i++) {
+      state = await rpc('jukebox_advance', {
+        p_expected_current_id: state.playback.current_queue_id,
+      });
+    }
+    const live = state.queue.filter((e: any) => e.status !== 'played');
+    if (live.length === 0 && !state.playback.current_queue_id) return;
+    await new Promise((r) => setTimeout(r, 400));
   }
 }
 
