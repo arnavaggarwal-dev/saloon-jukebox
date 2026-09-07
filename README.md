@@ -6,7 +6,8 @@ the same track at the same moment.
 
 **No account. No app. No paid service anywhere in the stack.**
 
-> **Live demo:** _see the Deployment section — the URL is printed by the Pages workflow._
+**▶ Live: https://arnavaggarwal-dev.github.io/saloon-jukebox/**
+Open it in two windows and add a record in one — it shows up in the other, in step.
 
 <!-- prettier-ignore -->
 | | |
@@ -50,6 +51,7 @@ the same track at the same moment.
 | Key | Action |
 |---|---|
 | `Space` | Play / pause (shared) |
+| `P` (button) | Previous track, or restart the current one |
 | `N` or `Shift`+`→` | Skip to next |
 | `M` | Mute / unmute (local) |
 | `←` `→` on the seek bar | Scrub |
@@ -83,6 +85,7 @@ across *devices*, set up Supabase below.
 | `npm run test:e2e` | Playwright end-to-end suite |
 | `npm run build:library` | Regenerate `songs.json`, `seed.sql`, `MUSIC_LICENSES.md` |
 | `npm run build:covers` | Regenerate the album artwork SVGs |
+| `npm run build:sql` | Rebuild `supabase/setup.sql` from the migrations + seed |
 | `npm run lint` | oxlint |
 
 ---
@@ -103,8 +106,11 @@ contains both the schema and the 16-track seed, and is safe to run repeatedly.
 
 ```
 supabase/migrations/001_initial_schema.sql   tables, RLS, functions, realtime
+supabase/migrations/002_previous_track.sql   the "previous track" function
 supabase/seed.sql                            the library
 ```
+
+`setup.sql` is regenerated from those with `npm run build:sql`.
 
 With the Supabase CLI: `supabase db push`, then apply the seed.
 </details>
@@ -168,6 +174,7 @@ and would let any visitor do anything.
         │    jukebox_add_to_queue()          │
         │    jukebox_remove_from_queue()     │
         │    jukebox_advance()      ← atomic │
+        │    jukebox_previous()              │
         │    jukebox_set_playing()           │
         │    jukebox_seek()                  │
         │                                    │
@@ -396,7 +403,7 @@ Postgres — see [Architecture](#the-one-genuinely-hard-problem).
 - **UI components** — several are adapted from
   [React Bits](https://reactbits.dev) (MIT): `Topography`, `Noise`,
   `ClickSpark`, `Magnet`, `StarBorder`, `GlareHover`, `SplitFlapText`,
-  `ShinyText`, `CountUp`, `RotatingText`, `SpotlightCard`, `ElasticSlider`.
+  `ShinyText`, `CountUp`, `SpotlightCard`, `ElasticSlider`.
   Two carry local fixes, noted in their file headers: `ElasticSlider` gained a
   controlled `value`/`onChange` plus keyboard and ARIA slider semantics (it was
   pointer-only), and `CountUp` no longer resets to zero on every update.

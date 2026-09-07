@@ -122,7 +122,9 @@ function Jukebox() {
 
   return (
     <ClickSpark sparkColor="#e0a94f" sparkCount={9} sparkRadius={19} sparkSize={9} duration={480}>
-      <div className="flex min-h-dvh flex-col">
+      {/* Which backend is live. Surfaced for tests and for debugging a
+          deployment where the credentials didn't make it into the build. */}
+      <div className="flex min-h-dvh flex-col" data-backend={mode}>
         <Background />
 
         <Header

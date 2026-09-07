@@ -265,6 +265,61 @@ test.describe('queue', () => {
   });
 });
 
+/** Is migration 002 applied? Against the local backend, always. */
+async function hasPreviousFunction(): Promise<boolean> {
+  if (!usingSupabase) return true;
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/jukebox_previous`, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_KEY!,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: '{}',
+  });
+  return res.ok;
+}
+
+test.describe('previous', () => {
+  test('steps back a track and keeps the one it left', async ({ page }) => {
+    // A database still on migration 001 makes the app fall back to "restart
+    // track", which is correct behaviour — but not what this asserts.
+    test.skip(
+      !(await hasPreviousFunction()),
+      'Apply supabase/migrations/002_previous_track.sql (or re-run setup.sql)',
+    );
+    await enterSaloon(page);
+    await addTrack(page, 'Barroom Ballet');
+    await addTrack(page, 'Cattails');
+    await addTrack(page, 'Neo Western');
+
+    // Move forward to Cattails.
+    await page.getByRole('button', { name: /skip to the next track/i }).click();
+    await expect.poll(async () => (await audioState(page))?.src ?? '').toContain('cattails');
+
+    // Back one: Barroom Ballet plays again, and Cattails is next rather than
+    // being dropped. (The old implementation skipped *forward* here.)
+    await page.getByRole('button', { name: /previous track/i }).click();
+    await expect
+      .poll(async () => (await audioState(page))?.src ?? '', { timeout: 15_000 })
+      .toContain('barroom-ballet');
+
+    const items = page.getByTestId('up-next').locator('> li');
+    await expect(items.nth(0)).toContainText('Cattails');
+    await expect(items.nth(1)).toContainText('Neo Western');
+  });
+
+  test('restarts the current track when it is already underway', async ({ page }) => {
+    await enterSaloon(page);
+    await addTrack(page, 'Cattails');
+    await expect.poll(async () => (await audioState(page))!.currentTime, { timeout: 20_000 }).toBeGreaterThan(5);
+
+    await page.getByRole('button', { name: /previous track/i }).click();
+    await expect.poll(async () => (await audioState(page))!.currentTime).toBeLessThan(4);
+    await expect.poll(async () => (await audioState(page))?.src ?? '').toContain('cattails');
+  });
+});
+
 test.describe('realtime sync', () => {
   test('two clients see one shared queue', async ({ context }) => {
     const a = await context.newPage();
@@ -347,6 +402,12 @@ test.describe('realtime across independent browsers', () => {
 
     await enterSaloon(a);
     await browseOnly(b);
+
+    // Having the credentials to hand doesn't mean the *build* under test uses
+    // them; a local-mode bundle shares nothing between contexts, so skip
+    // rather than report a false failure.
+    const backend = await a.locator('[data-backend]').getAttribute('data-backend');
+    test.skip(backend !== 'supabase', `Build under test uses the "${backend}" backend`);
     await expect(b.getByText(/^Live$/i)).toBeVisible({ timeout: 20_000 });
 
     await addTrack(a, 'Barroom Ballet');

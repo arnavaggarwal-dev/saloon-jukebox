@@ -64,6 +64,20 @@ export function createSupabaseBackend(client: SupabaseClient): JukeboxBackend {
       return rpc('jukebox_advance', { p_expected_current_id: expectedCurrentId });
     },
 
+    async previous() {
+      try {
+        return await rpc('jukebox_previous');
+      } catch (err) {
+        // Project still on migration 001: the function doesn't exist yet.
+        // Degrade to "restart this track" rather than showing an error.
+        const code = (err as JukeboxError)?.detail as { code?: string } | undefined;
+        if (code?.code === 'PGRST202' || code?.code === '42883') {
+          return rpc('jukebox_seek', { p_position_seconds: 0 });
+        }
+        throw err;
+      }
+    },
+
     async setPlaying(isPlaying, positionSeconds) {
       return rpc('jukebox_set_playing', {
         p_is_playing: isPlaying,

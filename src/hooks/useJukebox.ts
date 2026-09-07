@@ -199,20 +199,17 @@ export function useJukebox(onError: (message: string) => void) {
     [run],
   );
 
-  /** Restart the current track, or step back to the previously played one. */
+  /**
+   * Standard player behaviour: a few seconds in, "previous" means "start this
+   * one again"; right at the top, it means the track before.
+   */
   const previous = useCallback(async () => {
-    if (expectedPosition() > 4 || history.length === 0) {
+    if (expectedPosition() > 4) {
       await seek(0);
       return;
     }
-    try {
-      // Re-queue the last played record at the front by adding it again.
-      applyState(await backend.addToQueue(history[0].song.id, guestName));
-      applyState(await backend.advance(playback.current_queue_id));
-    } catch (err) {
-      onError(humanError(err, "Couldn't go back a track."));
-    }
-  }, [expectedPosition, history, seek, applyState, guestName, playback.current_queue_id, onError]);
+    await run(() => backend.previous(), "Couldn't go back a track.");
+  }, [expectedPosition, seek, run]);
 
   const addRequest = useCallback(
     async (message: string) => {

@@ -32,6 +32,12 @@ export interface JukeboxBackend {
    */
   advance(expectedCurrentId: string | null): Promise<JukeboxState>;
 
+  /**
+   * Step back a track, putting the current one at the head of the queue so it
+   * isn't lost. Restarts the current track when there is no history.
+   */
+  previous(): Promise<JukeboxState>;
+
   /** Shared transport control. `positionSeconds` is where the playhead is now. */
   setPlaying(isPlaying: boolean, positionSeconds: number): Promise<JukeboxState>;
 

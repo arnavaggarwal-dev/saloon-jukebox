@@ -11,7 +11,8 @@
     "test:e2e": "playwright test",
     "build:library": "node scripts/build-library.mjs",
     "build:covers": "node scripts/generate-covers.mjs",
-    "build:local": "VITE_SUPABASE_URL= VITE_SUPABASE_ANON_KEY= vite build"
+    "build:local": "VITE_SUPABASE_URL= VITE_SUPABASE_ANON_KEY= vite build",
+    "build:sql": "node scripts/build-setup-sql.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.115.0",

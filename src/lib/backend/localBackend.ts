@@ -167,6 +167,39 @@ export function createLocalBackend(songs: Song[]): JukeboxBackend {
       });
     },
 
+    async previous() {
+      return mutate((doc) => {
+        const played = doc.queue
+          .filter((r) => r.status === 'played')
+          .sort((a, b) => a.position - b.position || a.added_at.localeCompare(b.added_at));
+        const prev = played[played.length - 1];
+
+        // Nothing behind us: start the current record again.
+        if (!prev) {
+          doc.playback = {
+            ...doc.playback,
+            position_seconds: 0,
+            position_updated_at: nowIso(),
+            updated_at: nowIso(),
+          };
+          return;
+        }
+
+        const front = doc.queue
+          .filter((r) => r.status === 'queued')
+          .reduce((m, r) => Math.min(m, r.position), 0);
+
+        // Don't discard what we're leaving — it plays again next.
+        const current = doc.queue.find((r) => r.id === doc.playback.current_queue_id);
+        if (current) {
+          current.status = 'queued';
+          current.position = front - 1;
+        }
+        prev.position = front - 2;
+        startEntry(doc, prev);
+      });
+    },
+
     async setPlaying(isPlaying, positionSeconds) {
       return mutate((doc) => {
         doc.playback = {
