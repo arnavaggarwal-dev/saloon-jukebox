@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="640" height="640" role="img" aria-label="Neo Western by Kevin MacLeod">
+  <defs>
+    <radialGradient id="vig" cx="50%" cy="42%" r="72%">
+      <stop offset="0%" stop-color="#7E4420" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.62"/>
+    </radialGradient>
+    <radialGradient id="lbl" cx="42%" cy="34%" r="78%">
+      <stop offset="0%" stop-color="#F7E9D3"/>
+      <stop offset="100%" stop-color="#F7E9D3" stop-opacity="0.86"/>
+    </radialGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.16"/>
+      <stop offset="42%" stop-color="#ffffff" stop-opacity="0.02"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.16"/>
+    </linearGradient>
+    <filter id="paper" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" seed="450" result="n"/>
+      <feColorMatrix in="n" type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.055"/></feComponentTransfer>
+      <feComposite operator="in" in2="SourceGraphic"/>
+    </filter>
+  </defs>
+
+  <rect width="640" height="640" fill="#221812"/>
+  <rect width="640" height="640" fill="url(#vig)"/>
+  <circle cx="320" cy="320" r="214" fill="none" stroke="#E5B457" stroke-opacity="0.050" stroke-width="1.4"/><circle cx="320" cy="320" r="225" fill="none" stroke="#E5B457" stroke-opacity="0.050" stroke-width="1.4"/><circle cx="320" cy="320" r="236" fill="none" stroke="#E5B457" stroke-opacity="0.074" stroke-width="1.4"/><circle cx="320" cy="320" r="247" fill="none" stroke="#E5B457" stroke-opacity="0.062" stroke-width="1.4"/><circle cx="320" cy="320" r="258" fill="none" stroke="#E5B457" stroke-opacity="0.086" stroke-width="1.4"/><circle cx="320" cy="320" r="269" fill="none" stroke="#E5B457" stroke-opacity="0.098" stroke-width="1.4"/><circle cx="320" cy="320" r="280" fill="none" stroke="#E5B457" stroke-opacity="0.098" stroke-width="1.4"/><circle cx="320" cy="320" r="291" fill="none" stroke="#E5B457" stroke-opacity="0.074" stroke-width="1.4"/><circle cx="320" cy="320" r="302" fill="none" stroke="#E5B457" stroke-opacity="0.062" stroke-width="1.4"/><circle cx="320" cy="320" r="313" fill="none" stroke="#E5B457" stroke-opacity="0.086" stroke-width="1.4"/><circle cx="320" cy="320" r="324" fill="none" stroke="#E5B457" stroke-opacity="0.062" stroke-width="1.4"/><circle cx="320" cy="320" r="335" fill="none" stroke="#E5B457" stroke-opacity="0.086" stroke-width="1.4"/><circle cx="320" cy="320" r="346" fill="none" stroke="#E5B457" stroke-opacity="0.098" stroke-width="1.4"/>
+  <rect width="640" height="640" fill="url(#sheen)"/>
+
+  <rect x="26" y="26" width="588" height="588" rx="14" fill="none" stroke="#E5B457" stroke-opacity="0.55" stroke-width="2.5"/>
+  <rect x="38" y="38" width="564" height="564" rx="10" fill="none" stroke="#E5B457" stroke-opacity="0.26" stroke-width="1.2"/>
+  <circle cx="589.8" cy="431.7" r="4.5" fill="#E5B457" fill-opacity="0.5"/><circle cx="431.7" cy="589.8" r="4.5" fill="#E5B457" fill-opacity="0.5"/><circle cx="208.3" cy="589.8" r="4.5" fill="#E5B457" fill-opacity="0.5"/><circle cx="50.2" cy="431.7" r="4.5" fill="#E5B457" fill-opacity="0.5"/><circle cx="50.2" cy="208.3" r="4.5" fill="#E5B457" fill-opacity="0.5"/><circle cx="208.3" cy="50.2" r="4.5" fill="#E5B457" fill-opacity="0.5"/><circle cx="431.7" cy="50.2" r="4.5" fill="#E5B457" fill-opacity="0.5"/><circle cx="589.8" cy="208.3" r="4.5" fill="#E5B457" fill-opacity="0.5"/>
+
+  <g transform="rotate(-1 320 320)">
+    <circle cx="320" cy="320" r="206" fill="#7E4420" stroke="#E5B457" stroke-opacity="0.7" stroke-width="3"/>
+    <circle cx="320" cy="320" r="196" fill="url(#lbl)"/>
+    <circle cx="320" cy="320" r="182" fill="none" stroke="#7E4420" stroke-opacity="0.5" stroke-width="2"/>
+    <circle cx="320" cy="320" r="176" fill="none" stroke="#7E4420" stroke-opacity="0.3" stroke-width="1"/>
+
+    <text x="320" y="202" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif"
+          font-size="19" letter-spacing="7" fill="#7E4420" fill-opacity="0.85">SALOON</text>
+    <polygon points="258.0,201.0 259.7,205.6 264.7,205.8 260.8,208.9 262.1,213.7 258.0,210.9 253.9,213.7 255.2,208.9 251.3,205.8 256.3,205.6" fill="#7E4420"/>
+    <polygon points="382.0,201.0 383.7,205.6 388.7,205.8 384.8,208.9 386.1,213.7 382.0,210.9 377.9,213.7 379.2,208.9 375.3,205.8 380.3,205.6" fill="#7E4420"/>
+
+    <g font-family="Georgia, 'Times New Roman', serif" font-weight="bold" fill="#7E4420">
+      <text x="320" y="334.4" text-anchor="middle" font-size="48" letter-spacing="1">NEO WESTERN</text>
+    </g>
+
+    <line x1="242" y1="370.96" x2="398" y2="370.96" stroke="#7E4420" stroke-opacity="0.5" stroke-width="1.5"/>
+    <text x="320" y="400.96" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif"
+          font-size="21" letter-spacing="2" fill="#7E4420" fill-opacity="0.9">KEVIN MACLEOD</text>
+    <text x="320" y="470" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif"
+          font-size="14" letter-spacing="4" fill="#7E4420" fill-opacity="0.6">WESTERN</text>
+  </g>
+
+  <rect width="640" height="640" filter="url(#paper)" fill="#ffffff" opacity="0.5"/>
+</svg>

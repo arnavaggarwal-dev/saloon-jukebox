@@ -1,0 +1,178 @@
+@import 'tailwindcss';
+
+/* ------------------------------------------------------------------
+   Saloon Jukebox theme — dark wood, parchment, brass.
+   Tokens are Tailwind v4 `@theme` entries, so `bg-wood-800`,
+   `text-brass-400`, `font-display` etc. all work as normal utilities.
+   ------------------------------------------------------------------ */
+@theme {
+  --color-wood-950: #0d0906;
+  --color-wood-900: #140f0a;
+  --color-wood-850: #1a130d;
+  --color-wood-800: #221812;
+  --color-wood-700: #2e2117;
+  --color-wood-600: #3d2c1e;
+  --color-wood-500: #513a27;
+
+  --color-parchment-50: #fbf5e9;
+  --color-parchment-100: #f6ebd7;
+  --color-parchment-200: #ecdcc0;
+  --color-parchment-300: #d9c3a0;
+  --color-parchment-400: #b79f7d;
+
+  --color-brass-200: #f6dda6;
+  --color-brass-300: #efc978;
+  --color-brass-400: #e0a94f;
+  --color-brass-500: #c98f38;
+  --color-brass-600: #a5722a;
+
+  --color-oxblood-400: #b4543f;
+  --color-oxblood-500: #93382c;
+  --color-oxblood-600: #722a22;
+
+  --color-sage-400: #8a9a6b;
+  --color-sage-500: #6b7a4f;
+
+  --font-display: 'Rye', 'Georgia', serif;
+  --font-sign: 'Oswald', 'Impact', sans-serif;
+  --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  --radius-saloon: 0.875rem;
+
+  --animate-star-movement-top: star-movement-top 6s linear infinite alternate;
+  --animate-star-movement-bottom: star-movement-bottom 6s linear infinite alternate;
+}
+
+/* React Bits <StarBorder> keyframes. */
+@keyframes star-movement-top {
+  0% {
+    transform: translate(0%, 0%);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-100%, 0%);
+    opacity: 0;
+  }
+}
+@keyframes star-movement-bottom {
+  0% {
+    transform: translate(0%, 0%);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(100%, 0%);
+    opacity: 0;
+  }
+}
+
+@keyframes spin-record {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes vu-bounce {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+@keyframes pulse-live {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgb(224 169 79 / 0.5);
+  }
+  60% {
+    opacity: 0.75;
+    box-shadow: 0 0 0 6px rgb(224 169 79 / 0);
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-wood-950 text-parchment-100 font-body antialiased;
+    /* Warm lamplight pooling at the top of the room. */
+    background-image:
+      radial-gradient(120% 78% at 50% -12%, rgb(224 169 79 / 0.13), transparent 62%),
+      radial-gradient(90% 60% at 88% 8%, rgb(147 56 44 / 0.12), transparent 60%);
+    background-attachment: fixed;
+  }
+
+  /* One consistent, high-contrast focus ring everywhere. */
+  :focus-visible {
+    @apply outline-brass-300 outline-2 outline-offset-2;
+  }
+
+  ::selection {
+    @apply bg-brass-400/35 text-parchment-50;
+  }
+}
+
+@layer components {
+  /* Wood-panel card with a thin brass edge. */
+  .saloon-panel {
+    @apply border-brass-600/25 bg-wood-850/80 rounded-[var(--radius-saloon)] border shadow-[0_10px_36px_-12px_rgb(0_0_0/0.85)] backdrop-blur-sm;
+  }
+
+  .saloon-heading {
+    @apply font-sign text-brass-300 text-xs font-semibold tracking-[0.28em] uppercase;
+  }
+
+  /* Hairline rule with a diamond in the middle, like a saloon sign. */
+  .saloon-rule {
+    @apply relative h-px w-full;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--color-brass-600) 18%,
+      var(--color-brass-400) 50%,
+      var(--color-brass-600) 82%,
+      transparent
+    );
+    opacity: 0.42;
+  }
+}
+
+@layer utilities {
+  .scrollbar-saloon {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-brass-600) transparent;
+  }
+  .scrollbar-saloon::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+  }
+  .scrollbar-saloon::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-saloon::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: color-mix(in oklab, var(--color-brass-600) 65%, transparent);
+  }
+  .scrollbar-saloon::-webkit-scrollbar-thumb:hover {
+    background: var(--color-brass-500);
+  }
+
+  .text-shadow-saloon {
+    text-shadow: 0 2px 10px rgb(0 0 0 / 0.6);
+  }
+}
+
+/* Respect users who ask the OS to reduce motion: kill decorative animation
+   but keep the app fully functional. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
