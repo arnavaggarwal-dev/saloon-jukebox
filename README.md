@@ -370,6 +370,12 @@ covers what actually matters rather than snapshotting markup:
   sync is genuinely server-side.
 - Controls are labelled and keyboard-reachable; no horizontal overflow.
 
+> ⚠️ **Don't point the suite at a project people are listening to.** The specs
+> skip tracks and drain the queue between cases, and the queue is genuinely
+> shared — anyone connected will hear songs cut off after a few seconds. Use a
+> separate Supabase project for testing, or run `npm run build:local` and test
+> against the fallback backend.
+
 To run the cross-browser realtime spec, export the credentials so the harness
 can reset the shared queue between tests:
 
