@@ -1,22 +1,36 @@
-// Everything that talks to Supabase. The queue lives in Postgres; each mutation
-// is one atomic SQL function, which is what stops two browsers fighting over
-// the queue. See supabase/setup.sql.
-import { createClient } from '@supabase/supabase-js';
+// Everything that talks to Supabase, over plain fetch and one WebSocket.
+//
+// The queue lives in Postgres; each mutation is a single atomic SQL function,
+// which is what stops two browsers fighting over it. Realtime is a Phoenix
+// channel — spoken directly here, which is less code than the client library
+// and keeps the bundled single file smaller. See supabase/setup.sql.
 
-const url = import.meta.env.VITE_SUPABASE_URL?.trim();
-const key = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
+const URL_ = import.meta.env.VITE_SUPABASE_URL?.trim();
+const KEY = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
 
-export const configured = Boolean(url && key);
+export const configured = Boolean(URL_ && KEY);
 
-// Only the public anon key ever reaches the browser. RLS makes the tables
-// read-only to it; writes go through SECURITY DEFINER functions.
-export const db = configured
-  ? createClient(url, key, { auth: { persistSession: false } })
-  : null;
+// Only the public anon key is ever here. RLS makes the tables read-only to it
+// and writes go through SECURITY DEFINER functions, so it is safe to ship.
+const H = { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' };
 
-/** `music/x.mp3` -> `/saloon-jukebox/music/x.mp3`. Absolute URLs pass through. */
-export const asset = (p) =>
-  !p ? '' : /^(https?:)?\/\//.test(p) ? p : `${import.meta.env.BASE_URL}${p}`.replace(/\/{2,}/g, '/');
+/**
+ * Where the audio and artwork live.
+ *
+ * The database stores relative paths so it stays portable. Baking an absolute
+ * base in at build time is what lets the single-file build work opened from
+ * disk or hosted anywhere, without a music folder beside it. Set
+ * VITE_MEDIA_BASE to point at your own copy.
+ */
+const MEDIA = (import.meta.env.VITE_MEDIA_BASE ?? '').replace(/\/$/, '');
+
+/** Absolute URLs pass straight through; relative ones hang off MEDIA. */
+export const asset = (p) => {
+  if (!p) return '';
+  if (/^(https?:)?\/\//.test(p)) return p;
+  const rel = p.replace(/^\//, '');
+  return MEDIA ? `${MEDIA}/${rel}` : `${import.meta.env.BASE_URL}${rel}`.replace(/([^:]\/)\/+/g, '$1');
+};
 
 /** 195 -> "3:15" */
 export const time = (s) =>
@@ -36,48 +50,103 @@ export function guest() {
   }
 }
 
-const call = async (fn, args = {}) => {
-  const { data, error } = await db.rpc(fn, args);
-  if (error) throw error;
-  return data;
-};
+/**
+ * One RPC call, retried on a dropped connection or a server-side blip.
+ *
+ * Without this, a moment of bad wifi silently loses whatever you asked for —
+ * and because adds are queued in order, a lost one lets the next take its
+ * place, so your first pick quietly becomes someone's second. Client errors
+ * (4xx) are not retried: those won't get better.
+ */
+async function rpc(fn, body = {}, tries = 3) {
+  for (let i = 1; ; i++) {
+    let res;
+    try {
+      res = await fetch(`${URL_}/rest/v1/rpc/${fn}`, { method: 'POST', headers: H, body: JSON.stringify(body) });
+    } catch (networkError) {
+      if (i >= tries) throw networkError;
+      await new Promise((r) => setTimeout(r, 250 * i));
+      continue;
+    }
+    if (res.ok) return res.json();
+    if (res.status < 500 || i >= tries) throw new Error(`${fn}: ${res.status}`);
+    await new Promise((r) => setTimeout(r, 250 * i));
+  }
+}
 
 export const api = {
   songs: async () => {
-    const { data, error } = await db.from('songs').select('*').order('title');
-    if (error) throw error;
-    return data ?? [];
+    const r = await fetch(`${URL_}/rest/v1/songs?select=*&order=title`, { headers: H });
+    if (!r.ok) throw new Error('songs');
+    return r.json();
   },
-  state: () => call('jukebox_state'),
-  add: (songId, by) => call('jukebox_add_to_queue', { p_song_id: songId, p_added_by: by }),
-  remove: (id) => call('jukebox_remove_from_queue', { p_queue_id: id }),
-  next: (expected) => call('jukebox_advance', { p_expected_current_id: expected }),
-  play: (on, at) => call('jukebox_set_playing', { p_is_playing: on, p_position_seconds: Math.max(0, at) }),
-  seek: (at) => call('jukebox_seek', { p_position_seconds: Math.max(0, at) }),
+  state: () => rpc('jukebox_state', {}, 3),
+  // NOT retried: a repeat would queue the same record twice.
+  add: (songId, by) => rpc('jukebox_add_to_queue', { p_song_id: songId, p_added_by: by }),
+  remove: (id) => rpc('jukebox_remove_from_queue', { p_queue_id: id }, 3),
+  // Safe to repeat: the expected-id check makes a second call a no-op.
+  next: (expected) => rpc('jukebox_advance', { p_expected_current_id: expected }, 3),
+  play: (on, at) => rpc('jukebox_set_playing', { p_is_playing: on, p_position_seconds: Math.max(0, at) }, 3),
+  seek: (at) => rpc('jukebox_seek', { p_position_seconds: Math.max(0, at) }, 3),
   // Falls back to "restart track" if migration 002 isn't applied yet.
-  prev: () => call('jukebox_previous').catch(() => call('jukebox_seek', { p_position_seconds: 0 })),
+  prev: () => rpc('jukebox_previous').catch(() => rpc('jukebox_seek', { p_position_seconds: 0 })),
 };
 
-/** Realtime says *something* changed; we re-read the authoritative snapshot. */
+/**
+ * Subscribe to queue/playback changes.
+ *
+ * Realtime only says *that* something changed; we re-read the authoritative
+ * snapshot rather than patching rows locally. A slow poll runs alongside so a
+ * silently stalled socket can't strand the queue.
+ */
 export function watch(onChange, onStatus) {
-  let timer;
+  let ws, hb, tries = 0, dead = false, t;
   const refresh = () => {
-    clearTimeout(timer);
-    timer = setTimeout(() => api.state().then(onChange).catch(() => onStatus('down')), 80);
+    clearTimeout(t);
+    t = setTimeout(() => api.state().then(onChange).catch(() => onStatus('wait')), 80);
   };
-  const ch = db
-    .channel('saloon')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'queue' }, refresh)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'playback' }, refresh)
-    .subscribe((s) => {
-      onStatus(s === 'SUBSCRIBED' ? 'live' : s === 'CLOSED' ? 'down' : 'wait');
-      if (s === 'SUBSCRIBED') refresh();
-    });
-  // Safety net for a silently stalled socket (sleeping laptop, flaky wifi).
-  const poll = setInterval(refresh, 20000);
+
+  const open = () => {
+    if (dead) return;
+    ws = new WebSocket(`${URL_.replace('http', 'ws')}/realtime/v1/websocket?apikey=${KEY}&vsn=1.0.0`);
+    ws.onopen = () => {
+      tries = 0;
+      ws.send(JSON.stringify({
+        topic: 'realtime:saloon', event: 'phx_join', ref: '1', join_ref: '1',
+        payload: {
+          config: { postgres_changes: [
+            { event: '*', schema: 'public', table: 'queue' },
+            { event: '*', schema: 'public', table: 'playback' },
+          ] },
+          access_token: KEY,
+        },
+      }));
+      hb = setInterval(
+        () => ws.readyState === 1 && ws.send(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: String(Date.now()) })),
+        25_000,
+      );
+      onStatus('live');
+      refresh();
+    };
+    ws.onmessage = (m) => {
+      if (JSON.parse(m.data).event === 'postgres_changes') refresh();
+    };
+    ws.onerror = () => ws.close();
+    ws.onclose = () => {
+      clearInterval(hb);
+      if (dead) return;
+      onStatus('wait');
+      setTimeout(open, Math.min(1000 * 2 ** tries++, 15_000));
+    };
+  };
+
+  open();
+  const poll = setInterval(refresh, 20_000);
   return () => {
-    clearTimeout(timer);
+    dead = true;
+    clearTimeout(t);
     clearInterval(poll);
-    db.removeChannel(ch);
+    clearInterval(hb);
+    ws?.close();
   };
 }

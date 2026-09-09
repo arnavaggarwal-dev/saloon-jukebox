@@ -17,6 +17,8 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const source = JSON.parse(readFileSync(resolve(root, 'scripts/library.source.json'), 'utf8'));
 
+
+
 /* ---------------------------------------------------------------- helpers */
 
 /** Stable UUIDv5-style id, so re-running never duplicates a row. */
@@ -61,8 +63,8 @@ const GENRE = {
 };
 
 const songs = source.map((t) => {
-  const file = resolve(root, 'public/music', `${t.slug}.mp3`);
-  if (!existsSync(file)) console.warn(`  ! missing audio: public/music/${t.slug}.mp3`);
+  const file = resolve(root, 'music', `${t.slug}.mp3`);
+  if (!existsSync(file)) console.warn(`  ! missing audio: music/${t.slug}.mp3`);
   return {
     id: uuidFor(t.slug),
     slug: t.slug,
@@ -71,6 +73,8 @@ const songs = source.map((t) => {
     album: /not in a collection|^misc$|^unclassifiable$/i.test(t.album ?? '') ? null : t.album,
     genre: GENRE[t.slug] ?? t.genre ?? null,
     duration: (existsSync(file) && probe(file)) || t.duration,
+    // Relative, so the database stays portable; the client resolves them
+    // against VITE_MEDIA_BASE (see src/jukebox.js).
     audio_url: `music/${t.slug}.mp3`,
     cover_url: `covers/${t.slug}.svg`,
   };
@@ -159,8 +163,8 @@ function cover(song, i) {
 `;
 }
 
-mkdirSync(resolve(root, 'public/covers'), { recursive: true });
-songs.forEach((s, i) => writeFileSync(resolve(root, 'public/covers', `${s.slug}.svg`), cover(s, i)));
+mkdirSync(resolve(root, 'covers'), { recursive: true });
+songs.forEach((s, i) => writeFileSync(resolve(root, 'covers', `${s.slug}.svg`), cover(s, i)));
 
 /* -------------------------------------------------------------- seed + sql */
 

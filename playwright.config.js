@@ -22,5 +22,5 @@ export default defineConfig({
   ],
   webServer: DEPLOYED
     ? undefined
-    : { command: `npm run preview -- --port ${PORT} --strictPort --host 127.0.0.1`, port: PORT, reuseExistingServer: true },
+    : { command: `python3 -m http.server ${PORT} --bind 127.0.0.1 --directory dist`, port: PORT, reuseExistingServer: true },
 });

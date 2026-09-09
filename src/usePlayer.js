@@ -82,6 +82,7 @@ export function usePlayer() {
 
   const entry = queue.find((e) => e.id === pb.current_queue_id) ?? null;
   const upNext = queue.filter((e) => e.status === 'queued' && e.id !== pb.current_queue_id);
+  const history = queue.filter((e) => e.status === 'played').slice(-12).reverse();
   const src = entry ? asset(entry.song.audio_url) : '';
   const length = dur || entry?.song.duration || 0;
 
@@ -150,7 +151,7 @@ export function usePlayer() {
   };
 
   return {
-    audio, songs, queue, upNext, entry, status, busy, err, joined, gate,
+    audio, songs, queue, upNext, history, entry, status, busy, err, joined, gate,
     browse: () => setGate(false),
     playing: pb.is_playing, now, length, vol, muted, guest: name.current, toast, say,
     setVol: (v) => { setVol(v); if (v > 0) setMuted(false); },

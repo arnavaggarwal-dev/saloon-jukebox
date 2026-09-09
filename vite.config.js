@@ -1,10 +1,13 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { viteSingleFile } from 'vite-plugin-singlefile';
 
-// VITE_BASE lets the same source deploy to a project-scoped host (GitHub Pages)
-// or to a domain root.
+// Everything — React, the components, CSS — is inlined into one index.html, so
+// the build output is a single portable file you can open from disk or host
+// anywhere. Media stays external (absolute URLs in the database).
 export default defineConfig({
-  base: process.env.VITE_BASE ?? '/',
-  plugins: [react(), tailwindcss()],
+  base: './',
+  plugins: [react(), tailwindcss(), viteSingleFile()],
+  build: { outDir: 'dist', assetsInlineLimit: 100_000_000, cssCodeSplit: false },
 });

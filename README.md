@@ -11,14 +11,28 @@ No account, no app, no paid service anywhere in the stack.
 | | |
 |---|---|
 | Frontend | React + Vite + Tailwind, plain JavaScript |
+| Output | **one self-contained `index.html`** (~554 KB) |
 | Audio | the browser's native `<audio>` element |
 | Backend | Supabase (Postgres + Realtime) |
 | Music | 16 tracks, CC BY 4.0 |
-| Size | 8 source files, ~600 lines |
+| UI | [React Bits](https://reactbits.dev) — spiral library, drifting wall, option wheel, strands visualiser, three cursors |
+
+## The standalone file
+
+`npm run build` produces **`dist/index.html`** with React, every component and
+all the CSS inlined — no bundle beside it, no build step to open it. Download
+that one file and it works: it talks to Supabase over `fetch` and a WebSocket,
+and pulls audio and artwork from `VITE_MEDIA_BASE`. That file is committed, so
+you can grab it straight from the repo.
 
 ## Features
 
+- **A spiral of records** — the library is an `InfiniteSpiral` of covers.
+  **Drag one onto the queue**, or click it.
 - **Shared queue** — anyone with the link adds records; everyone sees it instantly.
+- **A strands visualiser** behind Now Playing that answers to the music, a
+  drifting wall of recently played, an option wheel for genre, and three
+  switchable cursor effects (glow, target, swarm).
 - **Synchronized playback** — clients agree not just on *what* is playing but
   *where* in the song, so you drop in mid-track like walking into a bar.
 - **Real audio** — one `<audio>` element actually loading and decoding MP3s.
@@ -119,9 +133,10 @@ watchdog on any other client calls the same idempotent `advance`.
 src/
   App.jsx           the whole UI
   usePlayer.js      shared state, the <audio> element, clock sync, watchdog
-  jukebox.js        Supabase client + queue/playback calls + realtime
+  jukebox.js        Supabase over fetch + WebSocket (no client library)
   main.jsx          entry
-  ShinyText.jsx  SpotlightCard.jsx  StarBorder.jsx  ElasticSlider.jsx
+  reactbits/        InfiniteSpiral · DriftWall · OptionWheel · Strands
+                    GlowCursor · TargetCursor · SwarmCursor · ElasticSlider
 supabase/
   migrations/       001 schema · 002 previous-track
   setup.sql         both + seed, generated, for one paste
@@ -154,7 +169,8 @@ Set **Settings → Pages → Source: GitHub Actions**, and add repo secrets
 `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
 
 Vercel/Netlify/Cloudflare work unchanged: build `npm run build`, output `dist`.
-Serving from a domain root? Leave `VITE_BASE` unset.
+The media (`music/`, `covers/`) is copied next to the file so `VITE_MEDIA_BASE`
+resolves; point that variable elsewhere to host the audio somewhere else.
 
 ## Testing
 
@@ -173,9 +189,11 @@ advances, pause actually stops it, a finished track advances the queue, and two
 ## Credits
 
 Music by Kevin MacLeod (CC BY 4.0). UI components adapted from
-[React Bits](https://reactbits.dev) (MIT): ShinyText, SpotlightCard, StarBorder,
-ElasticSlider — the last gained a controlled value, keyboard support and ARIA
-slider semantics, since the original was pointer-only. Icons by
+[React Bits](https://reactbits.dev) (MIT): InfiniteSpiral, DriftWall, OptionWheel, Strands,
+ElasticSlider, and three cursors. Two carry local fixes: `ElasticSlider` gained
+an `onChange` plus keyboard and ARIA slider semantics (it reported nothing and
+was pointer-only, so volume was unreachable), and `InfiniteSpiral` gained an
+`itemProps` hook so its cards can carry drag handlers. Icons by
 [Lucide](https://lucide.dev). Type: Rye, Oswald, Inter.
 
 ## License

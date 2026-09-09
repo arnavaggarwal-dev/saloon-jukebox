@@ -1,8 +1,10 @@
 # Dependencies
 node_modules/
 
-# Build output
-dist/
+# Build output. dist/index.html is deliberately committed: it IS the
+# standalone app, so you can download that one file and open it.
+dist/*
+!dist/index.html
 dist-ssr/
 *.local
 

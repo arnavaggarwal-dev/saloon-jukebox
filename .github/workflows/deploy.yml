@@ -33,18 +33,22 @@ jobs:
       - name: Build
         env:
           # Project-scoped Pages URL, e.g. /saloon-jukebox/
-          VITE_BASE: /${{ github.event.repository.name }}/
           # These are the PUBLIC anon credentials — they ship in the bundle by
           # design and are safe with the RLS policies in supabase/migrations/.
           # Without them the app shows a setup message instead of the jukebox.
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          # The database stores relative media paths; this is what lets the
+          # built single file find the audio from anywhere.
+          VITE_MEDIA_BASE: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
         run: npm run build
 
-      - name: Add SPA + Jekyll guards
-        # Pages serves via Jekyll by default, which strips files it doesn't
-        # recognise; .nojekyll turns that off. 404.html makes deep links work.
+      - name: Assemble the site
+        # dist/index.html is the whole app in one file; the media sits beside it
+        # so VITE_MEDIA_BASE resolves. .nojekyll stops Pages stripping files.
         run: |
+          cp -r music covers dist/
+          cp favicon.svg dist/
           touch dist/.nojekyll
           cp dist/index.html dist/404.html
 

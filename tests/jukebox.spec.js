@@ -31,20 +31,35 @@ async function reset() {
     if (!s.playback.current_queue_id && !s.queue.some((e) => e.status !== 'played')) return;
     await new Promise((r) => setTimeout(r, 300));
   }
+  const s = await rpc('jukebox_state');
+  throw new Error(
+    `Could not clear the shared queue. current=${s.playback.current_queue_id} live=${JSON.stringify(
+      s.queue.filter((e) => e.status !== 'played').map((e) => `${e.status}:${e.song.title}`),
+    )}`,
+  );
 }
 
 const enter = async (page) => {
-  await page.goto('./'); // './' keeps the /saloon-jukebox/ path on Pages
+  await page.goto('./'); // './' keeps the project path on GitHub Pages
   await page.getByRole('button', { name: /play jukebox/i }).click();
+  await expect(page.getByRole('dialog')).toBeHidden();
 };
 
 /** Dismiss the audio gate without enabling sound — the browsing path. */
 const browse = async (page) => {
   await page.goto('./');
   await page.getByRole('button', { name: /just browsing/i }).click();
+  await expect(page.getByRole('dialog')).toBeHidden();
 };
 
-const add = (page, title) => page.getByRole('button', { name: `Add ${title} to the queue` }).click();
+/**
+ * Cards sit in a 3D spiral and overlap, so a positional click lands on whichever
+ * card is painted on top — not the one we asked for. Dispatching the event
+ * straight at the element tests the handler we mean, and also sidesteps the
+ * spiral's asymptotic easing never satisfying Playwright's stability check.
+ */
+const add = (page, title) =>
+  page.getByRole('button', { name: `Add ${title} to the queue` }).dispatchEvent('click');
 
 /** The real state of the one <audio> element. */
 const audio = (page) =>
@@ -118,9 +133,6 @@ test('a finished track advances the queue on its own', async ({ page }) => {
 });
 
 test('skip and previous move between tracks', async ({ page }) => {
-  // Without migration 002 the app correctly falls back to "restart track",
-  // which is not what this asserts.
-  test.skip(!(await rpc('jukebox_previous')), 'Apply supabase/migrations/002_previous_track.sql');
   await enter(page);
   await add(page, 'Barroom Ballet');
   await add(page, 'Cattails');
@@ -146,7 +158,6 @@ test('queue keeps its order and can drop a track', async ({ page }) => {
   await expect(items.nth(0)).toContainText('Cattails');
   await expect(items.nth(1)).toContainText('Neo Western');
 
-  await items.nth(0).hover();
   await page.getByRole('button', { name: /remove cattails/i }).click();
   await expect(items).toHaveCount(1);
 });
@@ -185,7 +196,8 @@ test('controls are labelled and the layout does not overflow', async ({ page }) 
   await enter(page);
   await add(page, 'Cattails');
   await expect(page.getByRole('button', { name: /pause for everyone|play for everyone/i })).toBeVisible();
-  await expect(page.getByRole('slider', { name: /volume/i }).or(page.getByLabel(/seek/i)).first()).toBeAttached();
+  await expect(page.getByLabel(/seek within the current track/i)).toBeAttached();
+  await expect(page.getByLabel(/volume/i)).toBeAttached();
   expect(await page.locator('img:not([alt])').count()).toBe(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
