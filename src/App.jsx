@@ -1,11 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ListPlus, Pause, Play, SkipBack, SkipForward, Volume2, VolumeX, X } from 'lucide-react';
 
-import DriftWall from './reactbits/DriftWall';
 import ElasticSlider from './reactbits/ElasticSlider';
 import GlowCursor from './reactbits/GlowCursor';
 import InfiniteSpiral from './reactbits/InfiniteSpiral';
-import OptionWheel from './reactbits/OptionWheel';
 import Strands from './reactbits/Strands';
 import SwarmCursor from './reactbits/SwarmCursor';
 import TargetCursor from './reactbits/TargetCursor';
@@ -13,39 +11,79 @@ import { asset, configured, time } from './jukebox';
 import { usePlayer } from './usePlayer';
 
 const CURSORS = ['Off', 'Glow', 'Target', 'Swarm'];
-const ALL = 'All records';
+
+/**
+ * The bass meter, kept in its own component.
+ *
+ * Strands needs new props to animate, but re-rendering App for that would drag
+ * the whole library through React sixty times a second. Sampling here — and
+ * only when the level moves a visible amount — keeps the churn to this subtree.
+ */
+function BassStrand({ bassRef, playing }) {
+  const [level, setLevel] = useState(0);
+  const last = useRef(0);
+
+  useEffect(() => {
+    let raf;
+    const tick = () => {
+      const v = Math.round((bassRef.current ?? 0) * 20) / 20; // 0.05 steps
+      if (v !== last.current) {
+        last.current = v;
+        setLevel(v);
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [bassRef]);
+
+  return (
+    <Strands
+      colors={['#e0a94f']}
+      count={1}
+      speed={playing ? 0.35 + level * 0.9 : 0.04}
+      amplitude={playing ? 0.35 + level * 2.2 : 0.12}
+      waviness={0.8 + level * 1.4}
+      thickness={0.55 + level * 0.5}
+      glow={1.4 + level * 3.2}
+      intensity={0.4 + level * 0.6}
+      taper={2.4}
+      spread={0.8}
+      scale={1.5}
+    />
+  );
+}
 
 export default function App() {
   const p = usePlayer();
-  const [genre, setGenre] = useState(ALL);
   const [q, setQ] = useState('');
-  const [cursor, setCursor] = useState('Glow');
+  // Off by default: these are fullscreen WebGL/GSAP effects, and one shouldn't
+  // tax a phone or a weak GPU unless the visitor asks for it.
+  const [cursor, setCursor] = useState('Off');
   const [over, setOver] = useState(false); // queue is a drop target
 
-  const genres = useMemo(
-    () => [ALL, ...[...new Set(p.songs.map((s) => s.genre).filter(Boolean))].sort()],
-    [p.songs],
-  );
+  // Pointer effects are meaningless without a real pointer.
+  const [fine, setFine] = useState(false);
+  useEffect(() => {
+    const m = window.matchMedia('(pointer: fine)');
+    const sync = () => setFine(m.matches);
+    sync();
+    m.addEventListener('change', sync);
+    return () => m.removeEventListener('change', sync);
+  }, []);
 
   const shown = useMemo(() => {
     const t = q.trim().toLowerCase();
-    return p.songs.filter(
-      (s) =>
-        (genre === ALL || s.genre === genre) &&
-        (!t || [s.title, s.artist, s.album, s.genre].some((f) => (f || '').toLowerCase().includes(t))),
-    );
-  }, [p.songs, genre, q]);
+    return t
+      ? p.songs.filter((s) => [s.title, s.artist, s.album, s.genre].some((f) => (f || '').toLowerCase().includes(t)))
+      : p.songs;
+  }, [p.songs, q]);
 
   // The spiral takes {id, src, alt, label}; everything else it needs comes back
   // to us through itemProps below.
   const spiral = useMemo(
     () => shown.map((s) => ({ id: s.id, src: asset(s.cover_url), alt: `${s.title} by ${s.artist}`, label: s.title })),
     [shown],
-  );
-
-  const wall = useMemo(
-    () => p.history.map((e) => ({ image: asset(e.song.cover_url), title: `${e.song.title} — ${e.song.artist}` })),
-    [p.history],
   );
 
   const drop = (id) => {
@@ -70,10 +108,18 @@ export default function App() {
 
   return (
     <div className="min-h-dvh pb-28" data-backend="supabase">
-      {/* Only one cursor effect can be active — they all take over the pointer. */}
-      {cursor === 'Glow' && <GlowCursor />}
-      {cursor === 'Target' && <TargetCursor targetSelector=".cursor-target" spinDuration={2.5} hideDefaultCursor={false} />}
-      {cursor === 'Swarm' && <SwarmCursor />}
+      {/*
+        Only one cursor effect runs at a time — they each take over the pointer.
+        GlowCursor and SwarmCursor size themselves to their *container*
+        (h-full w-full), so bare they collapse to nothing; this fixed,
+        click-through layer is what makes them visible.
+      */}
+      {fine && (cursor === 'Glow' || cursor === 'Swarm') && (
+        <div className="pointer-events-none fixed inset-0 z-[60] h-screen w-screen">
+          {cursor === 'Glow' ? <GlowCursor /> : <SwarmCursor />}
+        </div>
+      )}
+      {fine && cursor === 'Target' && <TargetCursor targetSelector=".cursor-target" spinDuration={2.5} />}
 
       <header className="sticky top-0 z-30 flex flex-wrap items-center gap-3 border-b border-brass-600/20 bg-wood-950/85 px-4 py-3 backdrop-blur">
         <h1 className="font-display text-lg text-brass-400">Saloon Jukebox</h1>
@@ -83,13 +129,13 @@ export default function App() {
           {p.status === 'live' ? 'Live' : 'Connecting'}
         </span>
 
-        <label className="ml-auto flex items-center gap-2 text-[10px] tracking-[0.16em] text-parchment-400 uppercase">
+        <label className={`ml-auto flex items-center gap-2 text-[10px] tracking-[0.16em] text-parchment-400 uppercase ${fine ? '' : 'hidden'}`}>
           Cursor
           <select
             value={cursor}
             onChange={(e) => setCursor(e.target.value)}
             aria-label="Cursor effect"
-            className="rounded-full border border-brass-600/35 bg-wood-800 px-2 py-1 text-[11px] tracking-normal text-parchment-100 normal-case"
+            className="cursor-target rounded-full border border-brass-600/35 bg-wood-800 px-2 py-1 text-[11px] tracking-normal text-parchment-100 normal-case"
           >
             {CURSORS.map((c) => <option key={c}>{c}</option>)}
           </select>
@@ -101,16 +147,20 @@ export default function App() {
         {/* Now playing, over the Strands visualiser */}
         <section aria-label="Now playing" className="relative overflow-hidden rounded-xl border border-brass-600/25 bg-wood-850/70">
           <div className="pointer-events-none absolute inset-0 opacity-70">
+            {/* One strand, driven by the actual low end — it swells and glows
+                with the bass like the needle on an amp. */}
             <Strands
-              colors={['#e0a94f', '#b4543f', '#8a9a6b', '#efc978']}
-              count={4}
-              /* the visualiser answers to the music */
-              speed={p.playing ? 0.75 : 0.08}
-              amplitude={p.playing ? 1.25 : 0.35}
-              waviness={1.2}
-              intensity={0.55}
-              glow={2.2}
-              scale={1.6}
+              colors={['#e0a94f']}
+              count={1}
+              speed={p.playing ? 0.35 + p.bass * 0.9 : 0.04}
+              amplitude={p.playing ? 0.35 + p.bass * 2.2 : 0.12}
+              waviness={0.8 + p.bass * 1.4}
+              thickness={0.55 + p.bass * 0.5}
+              glow={1.4 + p.bass * 3.2}
+              intensity={0.4 + p.bass * 0.6}
+              taper={2.4}
+              spread={0.8}
+              scale={1.5}
             />
           </div>
 
@@ -144,24 +194,7 @@ export default function App() {
           </div>
         </section>
 
-        <div className="mt-4 grid gap-4 lg:grid-cols-[170px_minmax(0,1fr)_320px]">
-          {/* Genre picker */}
-          <section aria-label="Genres" className="rounded-xl border border-brass-600/25 bg-wood-850/70 p-3">
-            <h2 className="mb-1 text-[10px] tracking-[0.28em] text-brass-300 uppercase">Genre</h2>
-            <div className="h-[300px]">
-              <OptionWheel
-                items={genres}
-                defaultSelected={0}
-                onChange={(_i, label) => setGenre(label)}
-                textColor="#8a7358"
-                activeColor="#efc978"
-                side="left"
-                fontSize={1.15}
-                inset={30}
-              />
-            </div>
-          </section>
-
+        <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
           {/* The library, as a spiral of covers */}
           <section aria-label="Music library" className="rounded-xl border border-brass-600/25 bg-wood-850/70 p-3">
             <h2 className="mb-1 text-[10px] tracking-[0.28em] text-brass-300 uppercase">
@@ -173,7 +206,7 @@ export default function App() {
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search title, artist, album…"
               aria-label="Search the library"
-              className="mb-2 w-full rounded-full border border-brass-600/25 bg-wood-900/70 px-4 py-2 text-sm outline-none focus:border-brass-500"
+                            className="cursor-target mb-2 w-full rounded-full border border-brass-600/25 bg-wood-900/70 px-4 py-2 text-sm outline-none focus:border-brass-500"
             />
             <p className="mb-2 text-[11px] text-parchment-400/80">
               Drag a record onto the queue — or just click it.
@@ -181,15 +214,20 @@ export default function App() {
             {shown.length === 0 ? (
               <p className="py-16 text-center text-sm text-parchment-400">No tracks found.</p>
             ) : (
-            <div className="h-[420px]">
+            <div className="h-[520px]">
               <InfiniteSpiral
                 items={spiral}
-                radius={165}
+                radius={260}
                 cardWidth={104}
                 cardHeight={104}
-                cardsPerTurn={7}
-                speed={0.42}
-                centerScale={1.25}
+                cardsPerTurn={13}
+                /* must exceed the scaled card height, or they stack on top of
+                   each other instead of reading as a spiral */
+                verticalSpacing={86}
+                speed={0.3}
+                centerScale={1.15}
+                edgeFade={0.3}
+                edgeBlur={2}
                 pauseOnHover
                 itemProps={(item) => ({
                   className: 'cursor-target cursor-grab active:cursor-grabbing',
@@ -262,15 +300,6 @@ export default function App() {
           </section>
         </div>
 
-        {/* Recently played, drifting past */}
-        {wall.length > 0 && (
-          <section aria-label="Recently played" className="mt-4 overflow-hidden rounded-xl border border-brass-600/25 bg-wood-850/70 p-3">
-            <h2 className="mb-2 text-[10px] tracking-[0.28em] text-brass-300 uppercase">Recently played</h2>
-            <div className="h-[220px]">
-              <DriftWall items={wall} columns={5} tileWidth={150} tileHeight={100} speed={26} overlayColor="#140f0a" />
-            </div>
-          </section>
-        )}
       </main>
 
       {/* Player bar */}

@@ -14,8 +14,8 @@ No account, no app, no paid service anywhere in the stack.
 | Output | **one self-contained `index.html`** (~554 KB) |
 | Audio | the browser's native `<audio>` element |
 | Backend | Supabase (Postgres + Realtime) |
-| Music | 16 tracks, CC BY 4.0 |
-| UI | [React Bits](https://reactbits.dev) — spiral library, drifting wall, option wheel, strands visualiser, three cursors |
+| Music | 46 tracks, CC BY 4.0 |
+| UI | [React Bits](https://reactbits.dev) — spiral library, bass-driven Strands, three cursors, elastic volume |
 
 ## The standalone file
 
@@ -30,9 +30,12 @@ you can grab it straight from the repo.
 - **A spiral of records** — the library is an `InfiniteSpiral` of covers.
   **Drag one onto the queue**, or click it.
 - **Shared queue** — anyone with the link adds records; everyone sees it instantly.
-- **A strands visualiser** behind Now Playing that answers to the music, a
-  drifting wall of recently played, an option wheel for genre, and three
-  switchable cursor effects (glow, target, swarm).
+- **A visualiser wired to the actual audio** — a Web Audio analyser feeds the
+  low-frequency energy into a single Strand behind Now Playing, so it swells
+  and glows with the bass instead of animating on a timer.
+- **Three switchable cursor effects** (glow, target, swarm). Off by default:
+  they are fullscreen WebGL/GSAP and shouldn't tax a phone uninvited, and they
+  are hidden entirely where there's no fine pointer.
 - **Synchronized playback** — clients agree not just on *what* is playing but
   *where* in the song, so you drop in mid-track like walking into a bar.
 - **Real audio** — one `<audio>` element actually loading and decoding MP3s.
@@ -135,8 +138,8 @@ src/
   usePlayer.js      shared state, the <audio> element, clock sync, watchdog
   jukebox.js        Supabase over fetch + WebSocket (no client library)
   main.jsx          entry
-  reactbits/        InfiniteSpiral · DriftWall · OptionWheel · Strands
-                    GlowCursor · TargetCursor · SwarmCursor · ElasticSlider
+  reactbits/        InfiniteSpiral · Strands · ElasticSlider
+                    GlowCursor · TargetCursor · SwarmCursor
 supabase/
   migrations/       001 schema · 002 previous-track
   setup.sql         both + seed, generated, for one paste
@@ -189,11 +192,12 @@ advances, pause actually stops it, a finished track advances the queue, and two
 ## Credits
 
 Music by Kevin MacLeod (CC BY 4.0). UI components adapted from
-[React Bits](https://reactbits.dev) (MIT): InfiniteSpiral, DriftWall, OptionWheel, Strands,
-ElasticSlider, and three cursors. Two carry local fixes: `ElasticSlider` gained
-an `onChange` plus keyboard and ARIA slider semantics (it reported nothing and
-was pointer-only, so volume was unreachable), and `InfiniteSpiral` gained an
-`itemProps` hook so its cards can carry drag handlers. Icons by
+[React Bits](https://reactbits.dev) (MIT): InfiniteSpiral, Strands,
+ElasticSlider and the three cursors. Two carry local fixes: `ElasticSlider`
+gained an `onChange` plus keyboard and ARIA slider semantics (it reported
+nothing and was pointer-only, so volume was unreachable), and `InfiniteSpiral`
+gained an `itemProps` hook so its cards can carry drag handlers — merging the
+caller's className rather than replacing its own, which carries the layout. Icons by
 [Lucide](https://lucide.dev). Type: Rye, Oswald, Inter.
 
 ## License

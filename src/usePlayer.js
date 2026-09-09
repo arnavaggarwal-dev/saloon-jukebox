@@ -27,6 +27,12 @@ export function usePlayer() {
   const [toast, setToast] = useState(null);
   const [scrub, setScrub] = useState(null); // seek bar value while dragging
 
+  const analyser = useRef(null);
+  // 0..1 low-frequency energy. Deliberately a ref, not state: updating state
+  // here would re-render the whole app — and the 46-card spiral with it —
+  // sixty times a second. The visualiser samples this itself.
+  const bassRef = useRef(0);
+
   const skew = useRef(0);      // server clock minus ours
   const seenAt = useRef(0);    // newest snapshot applied, to drop stale ones
   const held = useRef(null);   // a seek we've made that the server hasn't echoed
@@ -141,11 +147,59 @@ export function usePlayer() {
     return () => clearInterval(id);
   }, [want, joined, pb, length, run, scrub]);
 
+  // Bass meter: mean of the lowest bins, eased so it reads like a VU needle
+  // rather than flickering.
+  useEffect(() => {
+    let raf;
+    let level = 0;
+    const tick = () => {
+      const a = analyser.current;
+      if (a) {
+        a.node.getByteFrequencyData(a.bins);
+        let sum = 0;
+        const n = Math.max(1, Math.floor(a.bins.length * 0.18)); // ~low end
+        for (let i = 0; i < n; i++) sum += a.bins[i];
+        const now = sum / n / 255;
+        level += (now - level) * 0.25;
+      } else {
+        level += (0 - level) * 0.1;
+      }
+      bassRef.current = level;
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
   useEffect(() => { fired.current = null; held.current = null; }, [pb.current_queue_id]);
+
+  /**
+   * Tap the element with a Web Audio analyser so the visualiser follows the
+   * actual low end rather than faking it. Needs CORS on the media (GitHub
+   * Pages sends `access-control-allow-origin: *`) and a user gesture, so it
+   * happens on join. If anything here is unsupported we simply keep silence
+   * on the meter — playback itself is untouched.
+   */
+  const listen = () => {
+    if (analyser.current || !audio.current) return;
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const node = ctx.createAnalyser();
+      node.fftSize = 256;
+      node.smoothingTimeConstant = 0.75;
+      ctx.createMediaElementSource(audio.current).connect(node);
+      node.connect(ctx.destination);
+      analyser.current = { ctx, node, bins: new Uint8Array(node.frequencyBinCount) };
+      ctx.resume?.();
+    } catch {
+      analyser.current = null;
+    }
+  };
 
   const join = async () => {
     setJoined(true);
     setGate(false);
+    listen();
     try { await audio.current?.play(); } catch { /* nothing queued yet */ }
     if (pb.current_queue_id && !pb.is_playing) run(() => api.play(true, want()));
   };
@@ -153,7 +207,7 @@ export function usePlayer() {
   return {
     audio, songs, queue, upNext, history, entry, status, busy, err, joined, gate,
     browse: () => setGate(false),
-    playing: pb.is_playing, now, length, vol, muted, guest: name.current, toast, say,
+    playing: pb.is_playing, now, length, vol, muted, guest: name.current, toast, say, bassRef,
     setVol: (v) => { setVol(v); if (v > 0) setMuted(false); },
     toggleMute: () => setMuted((m) => !m),
     add: (id) => runOrdered(() => api.add(id, name.current)),

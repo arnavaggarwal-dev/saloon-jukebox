@@ -210,6 +210,9 @@ const InfiniteSpiral = ({
   >
       <div className="absolute inset-0 [transform-style:preserve-3d]" role="list" aria-label="Infinite spiral gallery">
         {normalizedItems.map((item, index) => {
+    const extra = itemProps?.(item, index) ?? {};
+    const { className: extraClassName, ...extraRest } = extra;
+    const mergedClassName = extraClassName ? `${itemClassName} ${extraClassName}` : itemClassName;
     const content = <img
       className="absolute inset-0 block h-full w-full select-none object-center"
       src={item.src}
@@ -233,11 +236,11 @@ const InfiniteSpiral = ({
             </a> : <div
       key={item.id ?? `${item.src}-${index}`}
       ref={setCardRef(index)}
-      className={itemClassName}
       style={cardStyle}
       role="listitem"
       aria-label={item.label ?? item.alt}
-      {...(itemProps?.(item, index) ?? {})}
+      {...extraRest}
+      className={mergedClassName}
     >
               {content}
             </div>;

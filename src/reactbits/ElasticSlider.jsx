@@ -183,7 +183,7 @@ const Slider = ({
           {rightIcon}
         </motion.div>
       </motion.div>
-      <p className="absolute text-gray-400 transform -translate-y-4 text-xs font-medium tracking-wide">
+      <p className="sr-only">
         {Math.round(value)}
       </p>
     </>;
