@@ -1,56 +1,30 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="640" height="640" role="img" aria-label="Still Pickin by Kevin MacLeod">
   <defs>
-    <radialGradient id="vig" cx="50%" cy="42%" r="72%">
-      <stop offset="0%" stop-color="#44503A" stop-opacity="0.55"/>
-      <stop offset="100%" stop-color="#000000" stop-opacity="0.62"/>
+    <radialGradient id="v" cx="50%" cy="42%" r="72%">
+      <stop offset="0%" stop-color="#44503A" stop-opacity="0.55"/><stop offset="100%" stop-color="#000" stop-opacity="0.62"/>
     </radialGradient>
-    <radialGradient id="lbl" cx="42%" cy="34%" r="78%">
-      <stop offset="0%" stop-color="#F2EAD7"/>
-      <stop offset="100%" stop-color="#F2EAD7" stop-opacity="0.86"/>
-    </radialGradient>
-    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.16"/>
-      <stop offset="42%" stop-color="#ffffff" stop-opacity="0.02"/>
-      <stop offset="100%" stop-color="#000000" stop-opacity="0.16"/>
-    </linearGradient>
-    <filter id="paper" x="-10%" y="-10%" width="120%" height="120%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" seed="190" result="n"/>
-      <feColorMatrix in="n" type="saturate" values="0"/>
+    <filter id="p" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" seed="190"/>
+      <feColorMatrix type="saturate" values="0"/>
       <feComponentTransfer><feFuncA type="linear" slope="0.055"/></feComponentTransfer>
       <feComposite operator="in" in2="SourceGraphic"/>
     </filter>
   </defs>
-
-  <rect width="640" height="640" fill="#201812"/>
-  <rect width="640" height="640" fill="url(#vig)"/>
+  <rect width="640" height="640" fill="#201812"/><rect width="640" height="640" fill="url(#v)"/>
   <circle cx="320" cy="320" r="214" fill="none" stroke="#D4AC55" stroke-opacity="0.038" stroke-width="1.4"/><circle cx="320" cy="320" r="225" fill="none" stroke="#D4AC55" stroke-opacity="0.014" stroke-width="1.4"/><circle cx="320" cy="320" r="236" fill="none" stroke="#D4AC55" stroke-opacity="0.026" stroke-width="1.4"/><circle cx="320" cy="320" r="247" fill="none" stroke="#D4AC55" stroke-opacity="0.002" stroke-width="1.4"/><circle cx="320" cy="320" r="258" fill="none" stroke="#D4AC55" stroke-opacity="0.026" stroke-width="1.4"/><circle cx="320" cy="320" r="269" fill="none" stroke="#D4AC55" stroke-opacity="0.038" stroke-width="1.4"/><circle cx="320" cy="320" r="280" fill="none" stroke="#D4AC55" stroke-opacity="0.014" stroke-width="1.4"/><circle cx="320" cy="320" r="291" fill="none" stroke="#D4AC55" stroke-opacity="0.002" stroke-width="1.4"/><circle cx="320" cy="320" r="302" fill="none" stroke="#D4AC55" stroke-opacity="0.026" stroke-width="1.4"/><circle cx="320" cy="320" r="313" fill="none" stroke="#D4AC55" stroke-opacity="0.002" stroke-width="1.4"/><circle cx="320" cy="320" r="324" fill="none" stroke="#D4AC55" stroke-opacity="0.050" stroke-width="1.4"/><circle cx="320" cy="320" r="335" fill="none" stroke="#D4AC55" stroke-opacity="0.050" stroke-width="1.4"/><circle cx="320" cy="320" r="346" fill="none" stroke="#D4AC55" stroke-opacity="0.050" stroke-width="1.4"/>
-  <rect width="640" height="640" fill="url(#sheen)"/>
-
   <rect x="26" y="26" width="588" height="588" rx="14" fill="none" stroke="#D4AC55" stroke-opacity="0.55" stroke-width="2.5"/>
-  <rect x="38" y="38" width="564" height="564" rx="10" fill="none" stroke="#D4AC55" stroke-opacity="0.26" stroke-width="1.2"/>
-  <circle cx="589.8" cy="431.7" r="4.5" fill="#D4AC55" fill-opacity="0.5"/><circle cx="431.7" cy="589.8" r="4.5" fill="#D4AC55" fill-opacity="0.5"/><circle cx="208.3" cy="589.8" r="4.5" fill="#D4AC55" fill-opacity="0.5"/><circle cx="50.2" cy="431.7" r="4.5" fill="#D4AC55" fill-opacity="0.5"/><circle cx="50.2" cy="208.3" r="4.5" fill="#D4AC55" fill-opacity="0.5"/><circle cx="208.3" cy="50.2" r="4.5" fill="#D4AC55" fill-opacity="0.5"/><circle cx="431.7" cy="50.2" r="4.5" fill="#D4AC55" fill-opacity="0.5"/><circle cx="589.8" cy="208.3" r="4.5" fill="#D4AC55" fill-opacity="0.5"/>
-
   <g transform="rotate(-9 320 320)">
     <circle cx="320" cy="320" r="206" fill="#44503A" stroke="#D4AC55" stroke-opacity="0.7" stroke-width="3"/>
-    <circle cx="320" cy="320" r="196" fill="url(#lbl)"/>
+    <circle cx="320" cy="320" r="196" fill="#F2EAD7"/>
     <circle cx="320" cy="320" r="182" fill="none" stroke="#44503A" stroke-opacity="0.5" stroke-width="2"/>
-    <circle cx="320" cy="320" r="176" fill="none" stroke="#44503A" stroke-opacity="0.3" stroke-width="1"/>
-
-    <text x="320" y="202" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif"
-          font-size="19" letter-spacing="7" fill="#44503A" fill-opacity="0.85">SALOON</text>
-    <polygon points="258.0,201.0 259.7,205.6 264.7,205.8 260.8,208.9 262.1,213.7 258.0,210.9 253.9,213.7 255.2,208.9 251.3,205.8 256.3,205.6" fill="#44503A"/>
-    <polygon points="382.0,201.0 383.7,205.6 388.7,205.8 384.8,208.9 386.1,213.7 382.0,210.9 377.9,213.7 379.2,208.9 375.3,205.8 380.3,205.6" fill="#44503A"/>
-
-    <g font-family="Georgia, 'Times New Roman', serif" font-weight="bold" fill="#44503A">
-      <text x="320" y="333.2" text-anchor="middle" font-size="44" letter-spacing="1">STILL PICKIN</text>
+    <text x="320" y="202" text-anchor="middle" font-family="Georgia, serif" font-size="19" letter-spacing="7" fill="#44503A" fill-opacity="0.85">SALOON</text>
+    <polygon points="258.0,201.0 259.7,205.6 264.7,205.8 260.8,208.9 262.1,213.7 258.0,210.9 253.9,213.7 255.2,208.9 251.3,205.8 256.3,205.6" fill="#44503A"/><polygon points="382.0,201.0 383.7,205.6 388.7,205.8 384.8,208.9 386.1,213.7 382.0,210.9 377.9,213.7 379.2,208.9 375.3,205.8 380.3,205.6" fill="#44503A"/>
+    <g font-family="Georgia, serif" font-weight="bold" fill="#44503A">
+      <text x="320" y="333.2" text-anchor="middle" font-size="44">STILL PICKIN</text>
     </g>
-
     <line x1="242" y1="368.88" x2="398" y2="368.88" stroke="#44503A" stroke-opacity="0.5" stroke-width="1.5"/>
-    <text x="320" y="398.88" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif"
-          font-size="21" letter-spacing="2" fill="#44503A" fill-opacity="0.9">KEVIN MACLEOD</text>
-    <text x="320" y="470" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif"
-          font-size="14" letter-spacing="4" fill="#44503A" fill-opacity="0.6">BLUEGRASS</text>
+    <text x="320" y="398.88" text-anchor="middle" font-family="Georgia, serif" font-size="21" letter-spacing="2" fill="#44503A" fill-opacity="0.9">KEVIN MACLEOD</text>
+    <text x="320" y="470" text-anchor="middle" font-family="Georgia, serif" font-size="14" letter-spacing="4" fill="#44503A" fill-opacity="0.6">BLUEGRASS</text>
   </g>
-
-  <rect width="640" height="640" filter="url(#paper)" fill="#ffffff" opacity="0.5"/>
+  <rect width="640" height="640" filter="url(#p)" fill="#fff" opacity="0.5"/>
 </svg>

@@ -1,38 +1,27 @@
 {
-  "name": "pixl-webmedia",
+  "name": "saloon-jukebox",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "oxlint",
+    "build": "vite build",
     "preview": "vite preview",
-    "test:e2e": "playwright test",
-    "build:library": "node scripts/build-library.mjs",
-    "build:covers": "node scripts/generate-covers.mjs",
-    "build:local": "VITE_SUPABASE_URL= VITE_SUPABASE_ANON_KEY= vite build",
-    "build:sql": "node scripts/build-setup-sql.mjs"
+    "test": "playwright test",
+    "generate": "node scripts/generate.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.115.0",
     "lucide-react": "^1.42.0",
-    "motion": "^13.2.0",
-    "ogl": "^1.0.11",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
     "@tailwindcss/vite": "^4.3.3",
-    "@types/node": "^24.13.3",
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^6.1.0",
-    "oxlint": "^1.79.0",
     "playwright": "^1.63.0",
     "tailwindcss": "^4.3.3",
-    "typescript": "~6.0.2",
     "vite": "^8.2.2"
   }
 }

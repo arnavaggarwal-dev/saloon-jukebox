@@ -29,8 +29,6 @@ jobs:
 
       - run: npm ci
 
-      - name: Type-check
-        run: npx tsc -b
 
       - name: Build
         env:
@@ -38,7 +36,7 @@ jobs:
           VITE_BASE: /${{ github.event.repository.name }}/
           # These are the PUBLIC anon credentials — they ship in the bundle by
           # design and are safe with the RLS policies in supabase/migrations/.
-          # Without them the site still works, syncing per-browser only.
+          # Without them the app shows a setup message instead of the jukebox.
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: npm run build
