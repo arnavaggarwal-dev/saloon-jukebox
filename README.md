@@ -4,7 +4,7 @@ A collaborative web jukebox with an old-west saloon skin. Open the link, browse
 the records, drop one in the queue — everyone connected hears the same track at
 the same moment.
 
-**▶ Live: https://arnavaggarwal-dev.github.io/saloon-jukebox/**
+**▶ Live: https://arnavaggarwal-dev.github.io/saloon-jukebox-ai-PoC/**
 
 No account, no app, no paid service anywhere in the stack.
 

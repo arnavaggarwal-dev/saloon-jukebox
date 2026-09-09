@@ -50,24 +50,21 @@ export function usePlayer() {
     setBusy(false);
   }, []);
 
+  const run = useCallback(
+    (make) => Promise.resolve().then(make).then(apply).catch(() => say('The saloon wire is down. Retrying…')),
+    [apply, say],
+  );
+
   /**
-   * Runs one mutation at a time, in the order they were asked for.
-   *
-   * Fired off in parallel, three quick clicks can reach the server in any
-   * order and land in the queue shuffled. Chaining them keeps a single
-   * person's picks in the order they picked them; separate people still race
-   * fairly, which the SQL functions handle.
+   * Adds only: three quick clicks fired in parallel can reach the server in any
+   * order and land in the queue shuffled, so they go one at a time. Transport
+   * controls deliberately do *not* queue behind them — a pause should take
+   * effect now, not after someone's pending additions.
    */
   const chain = useRef(Promise.resolve());
-  const run = useCallback(
-    (make) => {
-      chain.current = chain.current
-        .then(make)
-        .then(apply)
-        .catch(() => say('The saloon wire is down. Retrying…'));
-      return chain.current;
-    },
-    [apply, say],
+  const runOrdered = useCallback(
+    (make) => (chain.current = chain.current.then(() => run(make))),
+    [run],
   );
 
   useEffect(() => {
@@ -158,7 +155,7 @@ export function usePlayer() {
     playing: pb.is_playing, now, length, vol, muted, guest: name.current, toast, say,
     setVol: (v) => { setVol(v); if (v > 0) setMuted(false); },
     toggleMute: () => setMuted((m) => !m),
-    add: (id) => run(() => api.add(id, name.current)),
+    add: (id) => runOrdered(() => api.add(id, name.current)),
     remove: (id) => run(() => api.remove(id)),
     skip: () => run(() => api.next(pb.current_queue_id)),
     prev: () => (want() > 4 ? run(() => api.seek(0)) : run(() => api.prev())),

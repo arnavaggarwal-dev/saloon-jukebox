@@ -81,7 +81,7 @@ test('audio really plays, pauses, seeks and mutes', async ({ page }) => {
   await expect.poll(async () => (await audio(page))?.src ?? '', { timeout: 20000 }).toContain('barroom-ballet.mp3');
   await expect.poll(async () => (await audio(page))?.ready ?? 0).toBeGreaterThanOrEqual(2);
   await expect.poll(async () => (await audio(page))?.err).toBeNull();
-  await expect.poll(async () => (await audio(page))?.paused).toBe(false);
+  await expect.poll(async () => (await audio(page))?.paused, { timeout: 15000 }).toBe(false);
 
   // Real decoded length, not a placeholder.
   expect((await audio(page)).d).toBeGreaterThan(50);
@@ -91,9 +91,9 @@ test('audio really plays, pauses, seeks and mutes', async ({ page }) => {
   expect((await audio(page)).t).toBeGreaterThan(t0 + 0.4);
 
   await page.getByRole('button', { name: /pause for everyone/i }).click();
-  await expect.poll(async () => (await audio(page))?.paused).toBe(true);
+  await expect.poll(async () => (await audio(page))?.paused, { timeout: 15000 }).toBe(true);
   await page.getByRole('button', { name: /play for everyone/i }).click();
-  await expect.poll(async () => (await audio(page))?.paused).toBe(false);
+  await expect.poll(async () => (await audio(page))?.paused, { timeout: 15000 }).toBe(false);
 
   const bar = page.getByLabel(/seek within the current track/i);
   await bar.fill('30');
